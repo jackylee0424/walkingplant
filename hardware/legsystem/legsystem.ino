@@ -17,54 +17,31 @@
 #define CALIB_MAX_M3 512
 #define CALIB_MIN_M3 100
 
+#define CALIB_MAX_M4 512
+#define CALIB_MIN_M4 100
+
 #define SAMPLE_DELAY 25 // in ms, 50ms seems good
 
 uint8_t recordButtonPin = 12;
 uint8_t playButtonPin = 7;
 uint8_t ledPin = 13;
 
-uint8_t servoPinM1 = 9;
+uint8_t servoPinM1 = 5;
 uint8_t feedbackPinM1 = A0;
 
-uint8_t servoPinM2 = 10;
+uint8_t servoPinM2 = 6;
 uint8_t feedbackPinM2 = A1;
 
-uint8_t servoPinM3 = 11;
+uint8_t servoPinM3 = 10;
 uint8_t feedbackPinM3 = A2;
+
+uint8_t servoPinM4 = 11;
+uint8_t feedbackPinM4 = A3;
 
 Servo m1Servo;
 Servo m2Servo;
 Servo m3Servo;
-
-/*
-// Calibration values
-int minDegrees;
-int maxDegrees;
-int minFeedback;
-int maxFeedback;
-int tolerance = 2; // max feedback measurement error
-
-*/
-/*
-  This function establishes the feedback values for 2 positions of the servo.
-  With this information, we can interpolate feedback values for intermediate positions
-*/
-/*
-void calibrate(Servo servo, int analogPin, int minPos, int maxPos)
-{
-  // Move to the minimum position and record the feedback value
-  servo.write(minPos);
-  minDegrees = minPos;
-  delay(2000); // make sure it has time to get there and settle
-  minFeedback = analogRead(analogPin);
-  
-  // Move to the maximum position and record the feedback value
-  servo.write(maxPos);
-  maxDegrees = maxPos;
-  delay(2000); // make sure it has time to get there and settle
-  maxFeedback = analogRead(analogPin);
-}
-*/
+Servo m4Servo;
 
   
 void setup() {
@@ -88,14 +65,14 @@ void setup() {
   
   Serial.println("Servo RecordPlay");
   
-  // need to do calibration
-  //m1Servo.attach(servoM1Pin);
-  //calibrate(m1Servo, feedbackM1Pin, 20, 160);  // calibrate for the 20-160 degree range
-  //m1Servo.detach();
+  // need to do manual calibration
 }
 
 // main loop
 void loop() {
+  
+  //Serial.println(analogRead(A5));
+  //delay(10);
   
    // record new sequence
    if (! digitalRead(recordButtonPin)) {
@@ -123,15 +100,43 @@ void playServo() {
   Serial.println("Playing");
 
   m1Servo.attach(servoPinM1);
+  m2Servo.attach(servoPinM2);
+  m3Servo.attach(servoPinM3);
+  m4Servo.attach(servoPinM4);
+  
   while (digitalRead(playButtonPin)) {    
     uint8_t x = EEPROM.read(addr);
-    if ((addr % 3) == 0){
+    if ((addr % 4) == 0){
       Serial.print("Read M1: "); Serial.print(x);
       if (x == 255) break;
       // map to 0-180 degrees
       x = map(x, 0, 254, 0, 180);
       Serial.print(" -> "); Serial.println(x);
       m1Servo.write(x);
+    }
+    if ((addr % 4) == 1){
+      Serial.print("Read M2: "); Serial.print(x);
+      if (x == 255) break;
+      // map to 0-180 degrees
+      x = map(x, 0, 254, 0, 180);
+      Serial.print(" -> "); Serial.println(x);
+      m2Servo.write(x);
+    }
+    if ((addr % 4) == 2){
+      Serial.print("Read M3: "); Serial.print(x);
+      if (x == 255) break;
+      // map to 0-180 degrees
+      x = map(x, 0, 254, 0, 180);
+      Serial.print(" -> "); Serial.println(x);
+      m3Servo.write(x);
+    }
+    if ((addr % 4) == 3){
+      Serial.print("Read M4: "); Serial.print(x);
+      if (x == 255) break;
+      // map to 0-180 degrees
+      x = map(x, 0, 254, 0, 180);
+      Serial.print(" -> "); Serial.println(x);
+      m4Servo.write(x);
     }
     delay(SAMPLE_DELAY);
     
@@ -140,6 +145,9 @@ void playServo() {
   }
   Serial.println("Done");
   m1Servo.detach();
+  m2Servo.detach();
+  m3Servo.detach();
+  m4Servo.detach();
   delay(250);  
 }
 
@@ -153,15 +161,43 @@ void recordServo() {
   
   // check if button pressed (as stop recording)
   while (digitalRead(recordButtonPin)) {
-     uint16_t a = analogRead(feedbackPinM1);
-     if ((addr % 3) == 0){
-       Serial.print("Read M1 analog: "); Serial.print(a);
-       if (a < CALIB_MIN_M1) a = CALIB_MIN_M1;
-       if (a > CALIB_MAX_M1) a = CALIB_MAX_M1;
-       a = map(a, CALIB_MIN_M1, CALIB_MAX_M1, 0, 254);
-       Serial.print(" -> "); Serial.println(a);
-       EEPROM.write(addr, a);
+     uint16_t a1 = analogRead(feedbackPinM1);
+     if ((addr % 4) == 0){
+       Serial.print("Read M1 analog: "); Serial.print(a1);
+       if (a1 < CALIB_MIN_M1) a1 = CALIB_MIN_M1;
+       if (a1 > CALIB_MAX_M1) a1 = CALIB_MAX_M1;
+       a1 = map(a1, CALIB_MIN_M1, CALIB_MAX_M1, 0, 254);
+       Serial.print(" -> "); Serial.println(a1);
+       EEPROM.write(addr, a1);
      }
+     uint16_t a2 = analogRead(feedbackPinM2);
+     if ((addr % 4) == 1){
+       Serial.print("Read M2 analog: "); Serial.print(a2);
+       if (a2 < CALIB_MIN_M2) a2 = CALIB_MIN_M2;
+       if (a2 > CALIB_MAX_M2) a2 = CALIB_MAX_M2;
+       a2 = map(a2, CALIB_MIN_M2, CALIB_MAX_M2, 0, 254);
+       Serial.print(" -> "); Serial.println(a2);
+       EEPROM.write(addr, a2);
+     }
+     uint16_t a3 = analogRead(feedbackPinM3);
+     if ((addr % 4) == 2){
+       Serial.print("Read M3 analog: "); Serial.print(a2);
+       if (a3 < CALIB_MIN_M3) a3 = CALIB_MIN_M3;
+       if (a3 > CALIB_MAX_M3) a3 = CALIB_MAX_M3;
+       a3 = map(a3, CALIB_MIN_M3, CALIB_MAX_M3, 0, 254);
+       Serial.print(" -> "); Serial.println(a3);
+       EEPROM.write(addr, a3);
+     }
+     uint16_t a4 = analogRead(feedbackPinM4);
+     if ((addr % 4) == 3){
+       Serial.print("Read M4 analog: "); Serial.print(a2);
+       if (a4 < CALIB_MIN_M4) a4 = CALIB_MIN_M4;
+       if (a4 > CALIB_MAX_M4) a4 = CALIB_MAX_M4;
+       a4 = map(a4, CALIB_MIN_M4, CALIB_MAX_M4, 0, 254);
+       Serial.print(" -> "); Serial.println(a4);
+       EEPROM.write(addr, a4);
+     }
+     
      addr++;
      if (addr == 512) break;
      delay(SAMPLE_DELAY);
@@ -177,21 +213,4 @@ void recordServo() {
   //       make a buffer where it can be loaded dynamically from host computer (Raspi)
 }
 
-/*
-void Seek(Servo servo, int analogPin, int pos)
-{
-  // Start the move...
-  servo.write(pos);
-  
-  // Calculate the target feedback value for the final position
-  int target = map(pos, minDegrees, maxDegrees, minFeedback, maxFeedback); 
-  
-  // Wait until it reaches the target
-  while(abs(analogRead(analogPin) - target) > tolerance){} // wait...
-}
 
-int getPos(int analogPin)
-{
-  return map(analogRead(analogPin), minFeedback, maxFeedback, minDegrees, maxDegrees);
-}
-*/
